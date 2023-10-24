@@ -1,74 +1,85 @@
-import PySimpleGUI as sg
 import pyfiglet
 
-# Constants for the game
 PLAYER_X = "X"
 PLAYER_O = "O"
 EMPTY = " "
 
-def draw_board(board):
-    """
-    Creates the Tic Tac Toe board using PySimpleGUI.
-    """
-    title = pyfiglet.figlet_format("Tic Tac Toe")
-    layout = [[sg.Text(title, font=("Any", 10), justification='center')]]
+def create_board():
+    """Initialize a new Tic Tac Toe board."""
+    return [EMPTY] * 9
 
-    for i, row in enumerate(board):
-        row_list = []
-        for j, cell in enumerate(row):
-            row_list.append(sg.Button(cell, size=(5, 2), key=(i, j), font=("Any", 24)))
-        layout.append(row_list)
-
-    layout.append([sg.Button("Restart", size=(15, 2), key="Restart", font=("Any", 18))])
-
-    return sg.Window("Tic Tac Toe", layout, finalize=True)
-
-def tic_tac_toe():
-    ...
-    
-    board = [[EMPTY] * 3 for _ in range(3)]
-    current_player = PLAYER_X
-    window = draw_board(board)
-
-    while True:
-        event, values = window.read()
-
-        if event == sg.WINDOW_CLOSED:
-            break
-        if event == "Restart":
-            board = [[EMPTY] * 3 for _ in range(3)]
-            current_player = PLAYER_X
-            window.close()
-            window = draw_board(board)
-            continue
-        
-        if board[event[0]][event[1]] == EMPTY:
-            board[event[0]][event[1]] = current_player
-            window[event].update(current_player)
-            if check_winner(board, current_player):
-                sg.popup(f"Player {current_player} wins!")
-                board = [[EMPTY] * 3 for _ in range(3)]
-                current_player = PLAYER_X
-                window.close()
-                window = draw_board(board)
-            else:
-                current_player = PLAYER_O if current_player == PLAYER_X else PLAYER_X
-
-    window.close()
+def display_board(board):
+    """Display the board using pyfiglet for fancy fonts."""
+    display_string = ""
+    for i in range(0, 9, 3):
+        display_string += f"{board[i]} | {board[i+1]} | {board[i+2]}\n"
+        if i < 6:
+            display_string += "-" * 9 + "\n"
+    print(display_string)
 
 def check_winner(board, player):
-    for row in board:
-        if all([cell == player for cell in row]):
+    """Checks if the given player has won the game."""
+    winning_combinations = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],  # Rows
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],  # Columns
+        [0, 4, 8], [2, 4, 6]              # Diagonals
+    ]
+    
+    for combination in winning_combinations:
+        if all([board[i] == player for i in combination]):
             return True
-    for col in range(3):
-        if all([board[row][col] == player for row in range(3)]):
-            return True
-    if board[0][0] == board[1][1] == board[2][2] == player:
-        return True
-    if board[0][2] == board[1][1] == board[2][0] == player:
-        return True
     return False
 
-if __name__ == "__main__":
-    tic_tac_toe()
+def is_draw(board):
+    """Check if the game has ended in a draw."""
+    return EMPTY not in board
 
+def get_user_move(board, current_player):
+    """Get the user's move."""
+    while True:
+        try:
+            position = int(input(f"Player {current_player}, choose a position (1-9): ")) - 1
+            if 0 <= position <= 8 and board[position] == EMPTY:
+                return position
+            else:
+                print("Invalid move. Try again.")
+        except ValueError:
+            print("Enter a valid number between 1 and 9.")
+
+def play_single_turn(board, current_player):
+    """Plays a single turn of Tic Tac Toe."""
+    position = get_user_move(board, current_player)
+    board[position] = current_player
+    
+    display_board(board)
+                
+    if check_winner(board, current_player):
+        print(f"\nPlayer {current_player} wins!\n")
+        return True
+    elif is_draw(board):
+        print("\nIt's a draw!\n")
+        return True
+
+    return False
+
+def tic_tac_toe():
+    """The main Tic Tac Toe game function."""
+    board = create_board()
+    current_player = PLAYER_X
+    display_board(board)
+
+    game_over = False
+    while not game_over:
+        game_over = play_single_turn(board, current_player)
+        current_player = PLAYER_O if current_player == PLAYER_X else PLAYER_X
+
+if __name__ == "__main__":
+    welcome_msg = pyfiglet.figlet_format("Welcome to Tic Tac Toe!")
+    print(welcome_msg)
+    
+    while True:
+        tic_tac_toe()
+        play_again = input("Do you want to play again? (yes/no): ").lower()
+        if play_again != "yes":
+            print("Thanks for playing!")
+            break
